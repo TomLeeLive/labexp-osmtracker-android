@@ -31,6 +31,14 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import android.util.Log;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+
+import dev.gustavoavila.websocketclient.WebSocketClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * GPS logging service.
  * 
@@ -39,6 +47,7 @@ import android.util.Log;
  */
 public class GPSLogger extends Service implements LocationListener {
 
+	private WebSocketClient webSocketClient;
 	private static final String TAG = GPSLogger.class.getSimpleName();
 
 	/**
@@ -201,9 +210,86 @@ public class GPSLogger extends Service implements LocationListener {
 			return GPSLogger.this;
 		}
 	}
-	
+
+
+	private void createWebSocketClient() {
+		URI uri;
+		try {
+			uri = new URI("ws://34.64.241.148:3000");
+		}
+		catch (URISyntaxException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		webSocketClient = new WebSocketClient(uri) {
+			@Override
+			public void onOpen() {
+				System.out.println("onOpen");
+				//webSocketClient.send("Hello, World!");
+
+				/*
+				ObjectMapper objectMapper = new ObjectMapper();
+
+				List<Double> myList = Arrays.asList(127.099521286473, 37.5071414727069);
+
+				try {
+					String jsonString = objectMapper.writeValueAsString(myList);
+					System.out.println(jsonString);
+
+					//To-Do: tomlee.
+					webSocketClient.send(jsonString);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				 */
+			}
+
+			@Override
+			public void onTextReceived(String message) {
+				System.out.println("onTextReceived");
+			}
+
+			@Override
+			public void onBinaryReceived(byte[] data) {
+				System.out.println("onBinaryReceived");
+			}
+
+			@Override
+			public void onPingReceived(byte[] data) {
+				System.out.println("onPingReceived");
+			}
+
+			@Override
+			public void onPongReceived(byte[] data) {
+				System.out.println("onPongReceived");
+			}
+
+			@Override
+			public void onException(Exception e) {
+				System.out.println(e.getMessage());
+			}
+
+			@Override
+			public void onCloseReceived(int reason, String description) {
+				System.out.println("onCloseReceived");
+			}
+		};
+
+		webSocketClient.setConnectTimeout(10000);
+		webSocketClient.setReadTimeout(60000);
+		webSocketClient.addHeader("Origin", "http://developer.example.com");
+		webSocketClient.enableAutomaticReconnection(5000);
+		webSocketClient.connect();
+	}
+
+
 	@Override
-	public void onCreate() {	
+	public void onCreate() {
+
+		createWebSocketClient();
+
 		Log.v(TAG, "Service onCreate()");
 		dataHelper = new DataHelper(this);
 
@@ -236,7 +322,7 @@ public class GPSLogger extends Service implements LocationListener {
 
 		// register for atmospheric pressure updates
 		pressureListener.register(this, use_barometer);
-				
+
 		super.onCreate();
 	}
 	
@@ -304,7 +390,23 @@ public class GPSLogger extends Service implements LocationListener {
 			lastGPSTimestamp = System.currentTimeMillis(); // save the time of this fix
 		
 			lastLocation = location;
-			
+
+
+			ObjectMapper objectMapper = new ObjectMapper();
+
+			List<Double> myList = Arrays.asList(location.getLongitude(), location.getLatitude());
+
+			try {
+				String jsonString = objectMapper.writeValueAsString(myList);
+				System.out.println(jsonString);
+
+				//To-Do: tomlee.
+				webSocketClient.send(jsonString);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 			if (isTracking) {
 				dataHelper.track(currentTrackId, location, sensorListener.getAzimuth(), sensorListener.getAccuracy(), pressureListener.getPressure());
 			}

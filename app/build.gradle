@@ -104,7 +104,13 @@ dependencies {
     implementation 'com.github.AppIntro:AppIntro:6.0.0'
     implementation 'com.google.android.material:material:1.1.0'
 
+    //for websocket
+    implementation 'dev.gustavoavila:java-android-websocket-client:2.0.2'
 
+    //for jackson. Android에서 Object 또는 List 와 JSON 간에 변환
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.9.7'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.9.7'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
 }
 
 task copyNorwegianValues(type: Copy) {
